@@ -1,10 +1,25 @@
-var express = require('express');
+////////    NODE MODULES    ////////
+var express    = require('express');
+var app        = express();
+var bodyParser = require('body-parser')
 
-var app = express();
+///////    SERVER MODULES    ///////
+var postData   = require('./controllers/post-data');
 
-var port = 9000;
-app.listen(port);
 
-app.use('/', (req, res) => {
-  res.send( `His power level is over port: ${ port }`);
+// MOUNT middlewares
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+
+// MOUNT subapp routes
+app.use('/post-data', postData);
+
+app.set('port', 1991);
+app.listen(app.get('port'), function(req, res){
+  console.log('Express app listening on port:', app.get('port'));
 });
+
+
+module.exports.app = app;

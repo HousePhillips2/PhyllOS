@@ -2,7 +2,7 @@
   "name": "PhyllOS",
   "version": "0.0.1",
   "description": "Friendly plant monitoring device hardware bundle",
-  "main": "server/server.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon server/server.js open http://localhost:9000"
@@ -15,6 +15,16 @@
   "readme": "Server for collection and transmission of data to Phyll O application.",
   "dependencies": {
     "body-parser": "^1.15.2",
-    "express": "^4.14.0"
+    "dotenv-safe": "^2.3.2",
+    "express": "^4.14.0",
+    "getmac": "^1.2.1",
+    "nan": "^2.4.0",
+    "nodeimu": "^2.1.9",
+    "request": "^2.75.0",
+    "sense-hat-matrix": "^0.2.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.0.2"
   }
 }
