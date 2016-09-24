@@ -22,16 +22,20 @@ var board = new five.Board({
   io: new Tessel()
 });
 
-// INITIALIZE variables
-var moistureData = [ ];
-var deviceId = os.networkInterfaces().eth0[0].mac;
+// // INITIALIZE variables
+var deviceId      = os.networkInterfaces().eth0[0].mac;
+var moistureData  = [ ];
+var lightData     = [ ];
+var location      = { };
 var ip;
-var location = { };
 
-// GET public IP address
+// // GET public IP address
 request('http://ifconfig.io/ip', function(error, response, ip){
   var url = 'http://freegeoip.net/json/';
+  console.log('Getting geolocation for public IP:', ip);
+  // GET geo location
   request(url + ip, function(error, response, locationInfo){
+    console.log('Device located');
     locationInfo      = JSON.parse(locationInfo);
     location.lat      = locationInfo.latitude;
     location.long     = locationInfo.longitude;
@@ -42,34 +46,43 @@ request('http://ifconfig.io/ip', function(error, response, ip){
 console.log("Hello, I'm Phyll")
 console.log("Device ID:", deviceId);
 
-// GET geo location
-
 // TODO: Below should be modularized and called once immediately and again
 // with the interval. Or something. Still not sold on interval as our chron job.
 
 // WHEN board ready state
 board.on("ready", function() {
   // ASSIGN PIN 7 on PORT A to register data
-  var soil = new five.Sensor("a7");
+  var soil  = new five.Sensor("b7");
+  var light = new five.Sensor("a7");
 
   // SAMPLE data
   setInterval(function() {
     moistureData.push(soil.value);
+    lightData.push(light.value - 450);
     // every five seconds
   }, 5000);
 
   // PING server every five minutes
   setInterval(function () {
 
+    var lightSample = lightData.reduce(function(acc, val) {
+      return [acc[0] + val, ++acc[1]];
+    }, [0, 0]);
+
     var moistureSample = moistureData.reduce(function(acc, val) {
       return [acc[0] + val, ++acc[1]];
     }, [0, 0]);
 
     // AVERAGE sample data
-    moistureSample = moistureSample[0] / moistureSample[1];
+    moistureSample  = moistureSample[0] / moistureSample[1];
+    lightSample     = lightSample[0]    / lightSample[1];
+
+    console.log(lightSample);
 
     // ASSIGN sample array to empty array
     moistureData = [ ];
+    lightData    = [ ];
+
 
     // SET HTTP request options
     var httpRequestOptions = {
@@ -77,10 +90,10 @@ board.on("ready", function() {
       form: { // dummy data with all available fields on server db
         deviceId: deviceId.toString(), // key — create or retrieve record
         location: location,
-        deviceOS: null,           // will update
-        deviceAlert: false,       // will update
-        moisture: moistureSample, // will push to array
-        light: null,              // will push to array
+        deviceOS: null,                       // will update
+        deviceAlert: false,                   // will update
+        moisture: moistureSample,  // will push to array
+        light: lightSample,       // will push to array
         // ph: null,                 // will push to array
         // humidity: null,           // will push to array
         // temperature: null,        // will push to array
@@ -92,8 +105,7 @@ board.on("ready", function() {
     console.log('SENDING REQUEST');
     request.post(httpRequestOptions, function(error, response, body){
       console.log('RESPONSE RECEIVED');
-      console.log(body);
-    })
+    });
 
   }, 300000);
 
