@@ -1,13 +1,21 @@
 ////////    NODE MODULES    ////////
 /* COMMENT line below when using Raspberry Pi */
+var tessel      = require('tessel');
 var Tessel      = require("tessel-io");
 var five        = require("johnny-five");
 var request     = require('request');
 var app         = require('./server/server').app;
 var os          = require('os');
-var getIp       = require('external-ip')();
-var iplocation  = require('iplocation');
 
+
+// ASSIGN blue LED to blueLed
+var leds = tessel.led;
+var blueLed = leds[3];
+
+// TOGGLE blue LED until error
+setInterval(function(){
+  blueLed.toggle();
+}, 700);
 
 // INSTANTIATE new Johnny-five board
 var board = new five.Board({
@@ -21,22 +29,20 @@ var ip;
 var location = { };
 
 // GET public IP address
-getIP(function (err, ip) {
-  if (err) {
-    throw err;
-  }
-  ip = ip;
+request('http://ifconfig.io/ip', function(error, response, ip){
+  var url = 'http://freegeoip.net/json/';
+  request(url + ip, function(error, response, locationInfo){
+    locationInfo      = JSON.parse(locationInfo);
+    location.lat      = locationInfo.latitude;
+    location.long     = locationInfo.longitude;
+    location.zipcode  = locationInfo.zip_code;
+  });
 });
 
 console.log("Hello, I'm Phyll")
 console.log("Device ID:", deviceId);
 
 // GET geo location
-iplocation(ip, function(err, res) {
-  location.lat      = res.lat;
-  location.long     = res.long;
-  location.zipcode  = res.zipcode;
-})
 
 // TODO: Below should be modularized and called once immediately and again
 // with the interval. Or something. Still not sold on interval as our chron job.
